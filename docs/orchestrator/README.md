@@ -1,0 +1,174 @@
+# How this works, in plain English
+
+You have an idea for an application. You want agents to build it properly. The problem is not that
+agents can't write code — they can. The problem is that they will happily build the wrong thing
+confidently, and tell you it went well.
+
+This is the part that happens **before** anyone writes the application. It turns your idea into
+three documents precise enough that a build team can work from them without guessing, and it
+checks each step before moving on.
+
+## The seven steps
+
+1. **Your idea.** You say what you want, in your own words. The orchestrator works as a thinking
+   partner, not a note-taker: it sorts your points, tells you what is missing, unclear or
+   contradictory, and names the decisions a product like yours usually has to make that you have
+   not mentioned. Those come as questions; nothing is added for you. Then it says your idea back
+   to you once. If its version has anything in it you didn't say, you correct it before anything
+   else happens.
+2. **Clarify.** First you see one list of standard behaviours: things every application should do,
+   such as refusing an impossible value without changing anything, or asking before deleting. One
+   reply covers them all, "all" or the numbers you want changed, and they are never asked again.
+   Then the questions, one stop (one question or one list) at a time. A big question, one that
+   changes what the product is, comes alone, with its options, what each costs and an example of
+   each; it is yours, so it comes with no recommendation. Small related things come as one numbered list you answer in one line
+   ("1 a, 2 b, 3 all correct", or "all"). Something many screens share is asked once, as a rule,
+   and applies to all of them. Every stop says how many are left ("stop 3 of about 6"), and each
+   step has a rough budget; when it runs out, what is left comes as one list and you pick which to
+   answer. Technical questions come with a recommended default, and if you take the default, it's
+   written down as a default rather than as your decision. Anything you'd rather decide later is
+   recorded as an open question, not quietly settled.
+3. **PRD and mockup.** First you see a few key screens, drawn by a designer agent that has studied
+   the platform's guidelines and similar products: a direction for how it looks. You say whether
+   it is right, and answer the questions those screens raised, in one list. Then come the written
+   requirements and the full mockup: one clickable page, or terminal transcripts for a
+   command-line tool. The requirements get numbers that never change, so everything afterwards can
+   point at them. What you already decided is applied wherever it fits, and you are shown where,
+   not asked again. Edge cases, the rare corners few users meet, are listed as not handled in
+   version one rather than asked; name one to promote it. Only a problem that would break the
+   application, or leave something you decided unbuilt, holds this step up; anything smaller is
+   noted and fixed later. A change to what the mockup does updates the requirements too, so the
+   two never drift apart; changes to how it looks get two rounds, then you decide.
+4. **How it should be built.** You're shown real options and you pick. Then every requirement is
+   placed in the design, and every single acceptance criterion gets matched to the thing that will
+   prove it — a test, a check, a review. If a criterion has nothing that could prove it, that's
+   caught here instead of after the build. The design also answers, one line each, the questions a
+   production application has to answer anyway (where secrets live, what is logged, how it is
+   built and started) and sets the conventions every builder will follow, so that an application
+   built by several agents is built in one style. The orchestrator recommends; you decide.
+5. **Tests and stories.** Every requirement gets at least one test that proves it works and at
+   least one that proves it fails properly. Every test points back at exactly one requirement, so
+   nothing is untested and no test is testing something nobody asked for. Each test also records
+   what it's supposed to do *before* the app is built — most should fail, and knowing which ones
+   and why is what makes the next part safe. The work is split into stories that don't touch the
+   same files.
+6. **Review.** A different agent, in a fresh session that has never seen the earlier conversation,
+   reviews the whole plan against a fixed checklist. It reports what's wrong. Things it can fix
+   inside the plan, it fixes once, and then a *new* review runs. Things that need a decision from
+   you come to you. Things that can't be fixed get written down as limitations rather than hidden.
+
+7. **Ready to build.** An accepted plan still isn't something a team can start on: the tests it
+   describes don't exist yet, they aren't on main, and you haven't approved them. So the tests
+   get written — by the orchestrator, never by the people who'll be judged by them — and checked by
+   someone who didn't write them. They're run against the empty project to confirm each one fails
+   the way the plan predicted, and against a throwaway answer to confirm each one *can* pass. The
+   throwaway is destroyed. The tests and the documents go into one pull request; you run
+   `pod-works preview <pr>` to see what the tests do against main's `app/`, then
+   `pod-works approve <pr>`, and the orchestrator checks afterwards on GitHub that the approval is
+   on the exact commit that merged.
+
+Then — and only then — the acceptance tests are locked.
+
+## What locking means and why it's last
+
+The acceptance tests are the tests written from the requirements before the build and locked so
+the builders cannot change them. They live under `eval/`, a protected path. The gate, `pod-gate`,
+runs main's copy of them against every pull request, whatever that pull request carries, and
+refuses a story that touches `eval/`. Changing a test is a pull request of its own, which the
+founder approves with a commit status, `pod/approval`, on that exact commit; a new push needs a
+new approval.
+
+That's the whole trick: **the standard is set before the work starts, and the people doing the work
+can't move it.** It's also why locking has to come last. Lock early and you lock in whatever
+the plan still got wrong.
+
+## Who the orchestrator works for
+
+It works for you, and that is not a figure of speech. It is the manager of the other agents, not a
+neutral party between you and them. In practice that means it checks their claims against the
+actual files instead of believing their summaries; it sends sloppy work back to them rather than
+bringing it to you; when something does need you, it arrives as a decision with the options, what
+each costs and a recommendation, not as a pile of findings to sort through; and anything in a
+document that you never asked for gets struck out or raised as a question.
+
+It also means it will tell you when you are about to lock in something the evidence says is
+wrong. Once, plainly, with the evidence — and then it does what you decide and records that you
+decided it. An orchestrator that agrees with you against the evidence is not on your side.
+
+And it speaks plainly. Every time it stops for you it says where you are, what it needs from you
+and why, your options with what each costs, its suggestion where it is allowed one (never on a
+product question, which is yours alone), and exactly what to type. If you are lost, say so: "what
+now", "where are we", "what does this mean", "I'm not sure" or "help" all work, at any stop. It
+explains the stop again in simpler words with an example answer, and "go with your suggestion" is
+a valid answer, recorded as taken on its suggestion. "What's the plan" lists what is done, where
+you are and what is still to come. `ORCHESTRATOR.md` section 3.2 is the rule.
+
+## Who does what
+
+- **You:** answer questions, choose between options, decide on findings, accept each step. You are
+  the only one who can approve anything, and you're the one who locks the acceptance tests.
+- **The orchestrator:** runs the process, asks you one thing at a time, keeps the state file,
+  hands work to other agents. It writes none of the documents itself and approves nothing.
+- **Drafters:** one agent per document, each working from a written standard.
+- **The designer:** draws the mockup against a written standard, after researching the platform and
+  similar products. It decides how things look; what they do stays yours.
+- **Checkers:** separate agents in fresh sessions. A drafter never reviews its own work.
+
+## What it will refuse to do
+
+This matters more than what it does. It will not move past a step that isn't finished, invent an
+answer to a product question, write or edit a document it also reviewed, let one session both
+write and check the same thing, add scope because a review suggested something, drop or weaken a
+test so a step passes, lock anything by itself, or quietly switch to a different process when
+it's stuck. When it's stuck it tells you what's blocking it and stops.
+
+## What you end up with
+
+A numbered requirements document, a technical design where every requirement has a home and every
+criterion has something that proves it, a test plan where every requirement is covered both ways,
+an ordered list of stories, a written list of the known gaps, and a state file that says exactly
+where everything stands. That's the handoff a build team needs.
+
+## Running it
+
+It's plain markdown with no dependencies, so it runs in Claude Code CLI, through the
+`pod-works-prepare` skill, or in Codex CLI. See [RUNTIMES.md](RUNTIMES.md). Which model and effort
+each role runs on, why, and how a project changes them is [MODELS.md](MODELS.md). To use it on your own
+project, run `pod-works init` and `pod-works protect` in that repository for the gate, and copy
+`docs/orchestrator/` and `.claude/` into it for the preparation.
+
+## After it finishes
+
+This is the part before anyone writes the application. What happens afterwards — dispatching a
+builder for each story, checking candidates against the records rather than the builder's own
+report, running the approvals and closing a story out — is [BUILD.md](BUILD.md). It is a
+separate role and should be a separate session: the orchestrator that helped produce the tests
+is not the one that decides whether work judged by them is done.
+
+What happens after the first build has landed and you want something more, something different
+or something gone is [INCREMENT.md](INCREMENT.md): one founder-approved pull request that amends
+the contract and the acceptance tests, then a story built against it. The build orchestrator runs
+it in one session, `/pod-works-increment`, and stops once, for your approval: an agent drafts the
+pull request, `pod-works packet rehearse` runs it against the current application, a fresh reader
+(`pod-works review --packet`) checks it, and once you have approved, the story is built at once.
+
+The whole flow, end to end: prepare (`/pod-works-prepare`); build the plan
+(`/pod-works-build all` walks every planned story in order, each later one's packet first, each one's QA after it
+merges and each fix-now defect next, and
+stops only for your approvals and decisions; `/pod-works-build S-<n>` builds one: the id is
+`S-<n>`; its files are numbered, `eval/stories/<n>.md`, its branch `story/<n>`); an increment for
+each later change, its packet then its story (`/pod-works-increment`); the QA pass on the merged application, which brings you its defects to
+decide (`/pod-works-qa`); and your acceptance, which `/pod-works-accept` prepares and you record
+and approve yourself; then your release, `pod-works release <version>`, which tags the accepted
+head and publishes it on GitHub, and deploys nothing.
+
+## Honest limits
+
+- The checks catch missing structure, broken traceability and uncovered requirements. They cannot
+  tell you the requirements are the *right* requirements. That judgment is yours, in steps 1 to 3,
+  and it's the step that most decides whether the result is any good.
+- A second agent reviewing a first agent is better than nothing and worse than a careful human. It
+  catches different mistakes, not all mistakes.
+- Locking the tests stops a builder cheating. It doesn't make a test correct.
+- None of this checks the quality or security of the code that gets written. That happens after
+  the tests are locked, on the build side.
